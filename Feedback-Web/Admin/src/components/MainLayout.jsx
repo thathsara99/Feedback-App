@@ -101,6 +101,16 @@ const MainLayout = ({ children }) => {
                   label: <Link to="/templates" style={{ color: headerTextColor }}>Templates</Link>,
                   icon: <InfoCircleOutlined style={{ color: headerTextColor }} />
                 },
+                { 
+                  key: "3", 
+                  label: <Link to="/companies" style={{ color: headerTextColor }}>Company</Link>,
+                  icon: <InfoCircleOutlined style={{ color: headerTextColor }} />
+                },
+                { 
+                  key: "4", 
+                  label: <Link to="/users" style={{ color: headerTextColor }}>User</Link>,
+                  icon: <UserOutlined style={{ color: headerTextColor }} />
+                },
               ]}
             />
           </Space>
