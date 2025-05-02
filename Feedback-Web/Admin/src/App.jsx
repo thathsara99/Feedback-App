@@ -4,6 +4,7 @@ import MainLayout from "./components/MainLayout";
 import Home from "./pages/Home";
 import Templates from "./pages/Templates";
 import Login from "./pages/Login";
+import ForgotPasswordPage from "./pages/ForgotPassword";
 
 // Simple auth check using token from localStorage
 const isAuthenticated = () => !!localStorage.getItem("token");
@@ -19,6 +20,8 @@ function App() {
 
       {/* Public login route */}
       <Route path="/login" element={<Login />} />
+
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
       {/* Protected routes inside MainLayout */}
       {isAuthenticated() && (
