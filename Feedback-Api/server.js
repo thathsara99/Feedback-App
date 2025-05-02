@@ -115,6 +115,29 @@ app.post('/api/users', authMiddleware, async (req, res) => {
     res.status(201).json({ message: 'User created successfully.' });
 });
 
+//Forgot Password
+app.post('/api/reset-password', async (req, res) => {
+  const { email, newPassword } = req.body;
+
+  if (!email || !newPassword) {
+    return res.status(400).json({ message: 'All fields are required.' });
+  }
+
+  const users = readJSON(usersFile);
+  const userIndex = users.findIndex(u => u.email === email);
+
+  if (userIndex === -1) {
+    // Don't reveal user existence
+    return res.status(200).json({ message: 'If your email is registered, your password has been reset.' });
+  }
+
+  const hashedPassword = await bcrypt.hash(newPassword, 10);
+  users[userIndex].password = hashedPassword;
+  writeJSON(usersFile, users);
+
+  return res.status(200).json({ message: 'Password reset successfully.' });
+});
+
 // Get templates (auth required)
 app.get('/api/templates', authMiddleware, (req, res) => {
   const templates = readJSON(templatesFile);

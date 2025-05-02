@@ -3,7 +3,7 @@
     "id": "1746178690804",
     "name": "Super Admin",
     "email": "admin@example.com",
-    "password": "$2b$12$tOH9ZZ6DRYqpRrpqTXCPDOsMwBnCOXhisuEGqEMaAbqn0ak2ZrqWa",
+    "password": "$2b$10$Cgy00QyC9Tf6zYHiXT8gt.Wo7hlQuY/tuulzsUeaYhptk6/UvbRtm",
     "role": "system_admin",
     "companyId": null
   }
