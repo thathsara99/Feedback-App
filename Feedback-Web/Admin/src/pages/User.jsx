@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Table,
   Button,
@@ -6,155 +6,163 @@ import {
   Form,
   Input,
   Select,
-  Checkbox,
+  Switch,
   Popconfirm,
   Space,
   message,
   Row,
   Col,
-  Modal,
+  Spin,
 } from 'antd';
 import {
   EditOutlined,
   DeleteOutlined,
   PlusOutlined,
 } from '@ant-design/icons';
+import axios from 'axios';
+const token = localStorage.getItem('token');
 
 const { Option } = Select;
 
-const TemplatesPage = () => {
+const axiosInstance = axios.create({
+  baseURL: 'http://localhost:5000',
+  headers: {
+    Authorization: `Bearer ${token}`,
+  },
+});
+
+const UsersPage = () => {
   const [form] = Form.useForm();
   const [visible, setVisible] = useState(false);
-  const [editingId, setEditingId] = useState(null);
-  const [previewVisible, setPreviewVisible] = useState(false);
-  const [selectedTemplate, setSelectedTemplate] = useState(null);
+  const [editingUser, setEditingUser] = useState(null);
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  const [data, setData] = useState([
-    {
-      key: '1',
-      templateName: 'Star Rating Template',
-      type: 'StarRating',
-      requireComment: true,
-      requireUsername: false,
-    },
-    {
-      key: '2',
-      templateName: 'Smile Rating Template',
-      type: 'SmileRating',
-      requireComment: false,
-      requireUsername: true,
-    },
-    {
-      key: '3',
-      templateName: 'Customer Feedback',
-      type: 'Questionnaire',
-      requireComment: true,
-      requireUsername: true,
-      config: {
-        questions: [
-          { question: 'How was our service?', type: 'text' },
-          { question: 'Rate the cleanliness.', type: 'rating' },
-        ],
-      },
-    },
-  ]);
+  // Fetch user list
+  const fetchUsers = async () => {
+    setLoading(true);
+    try {
+      const response = await axiosInstance.get('/api/users');
+      const users = response.data.map((user) => ({
+        ...user,
+        key: user._id,
+      }));
+      setData(users);
+    } catch (err) {
+      message.error('Failed to fetch users');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
 
   const showDrawer = (record = null) => {
     if (record) {
-      form.setFieldsValue(record);
-      setEditingId(record.key);
+      form.setFieldsValue({
+        ...record,
+        status: record.active,
+      });
+      setEditingUser(record._id);
     } else {
       form.resetFields();
-      setEditingId(null);
+      setEditingUser(null);
     }
     setVisible(true);
   };
 
   const onClose = () => {
     setVisible(false);
+    form.resetFields();
+    setEditingUser(null);
   };
 
-  const onFinish = (values) => {
-    if (editingId) {
-      // Update existing record
-      setData((prev) =>
-        prev.map((item) =>
-          item.key === editingId
-            ? { ...item, ...values }
-            : item
-        )
-      );
-      message.success('Template updated successfully');
-    } else {
-      // Add new record
-      const newRecord = {
+  const onFinish = async (values) => {
+    console.log('onFinish called with:', values);
+    try {
+      const payload = {
         ...values,
-        key: Date.now().toString(),
+        status: values.status || false, // not `active`
+        companyId: '1746200263776',
       };
 
-      // Add dummy config if type is Questionnaire
-      if (newRecord.type === 'Questionnaire') {
-        newRecord.config = {
-          questions: [
-            { question: 'New question 1?', type: 'text' },
-            { question: 'New question 2?', type: 'rating' },
-          ],
-        };
+      if (editingUser) {
+        await axiosInstance.put(`/api/users/${editingUser._id}`, payload);
+        message.success('User updated successfully');
+      } else {
+        await axiosInstance.post('/api/users', payload);
+        message.success('User created successfully');
       }
 
-      setData((prev) => [...prev, newRecord]);
-      message.success('Template added successfully');
+      fetchUsers();
+      setVisible(false);
+    } catch (err) {
+      message.error(err.response?.data?.message || 'Operation failed');
     }
-    setVisible(false);
   };
 
-  const handleDelete = (key) => {
-    setData((prev) => prev.filter((item) => item.key !== key));
-    message.success('Template deleted successfully');
+  const handleDelete = async (id) => {
+    try {
+      await axiosInstance.delete(`/api/users/${id}`);
+      message.success('User deleted');
+      fetchUsers();
+    } catch (err) {
+      message.error('Delete failed');
+    }
   };
 
   const columns = [
     {
-      title: 'Template Name',
-      dataIndex: 'templateName',
-      key: 'templateName',
+      title: 'First Name',
+      dataIndex: 'firstName',
     },
     {
-      title: 'Type',
-      dataIndex: 'type',
-      key: 'type',
+      title: 'Last Name',
+      dataIndex: 'lastName',
+    },
+    {
+      title: 'Email',
+      dataIndex: 'email',
+    },
+    {
+      title: 'Phone',
+      dataIndex: 'phoneNumber',
+    },
+    {
+      title: 'Role',
+      dataIndex: 'role',
+      render: (role) =>
+        role === 'company_admin' ? 'Company Admin' :
+role === 'general_user' ? 'General User' : 'Unknown Role',
+
+    },
+    {
+      title: 'Status',
+      dataIndex: 'active',
+      render: (active) =>
+        active ? (
+          <span style={{ color: 'green' }}>Active</span>
+        ) : (
+          <span style={{ color: 'red' }}>Inactive</span>
+        ),
     },
     {
       title: 'Action',
       key: 'action',
-      width: 250,
       render: (_, record) => (
-        <Space size="middle">
-          <Button
-            type="link"
-            icon={<EditOutlined />}
-            onClick={() => showDrawer(record)}
-          >
+        <Space>
+          <Button type="link" icon={<EditOutlined />} onClick={() => showDrawer(record)}>
             Edit
           </Button>
-
-          <Button
-            type="link"
-            onClick={() => {
-              setSelectedTemplate(record);
-              setPreviewVisible(true);
-            }}
-          >
-            Preview
-          </Button>
-
           <Popconfirm
-            title="Are you sure to delete this template?"
-            onConfirm={() => handleDelete(record.key)}
+            title="Are you sure to delete this user?"
+            onConfirm={() => handleDelete(record._id)}
             okText="Yes"
             cancelText="No"
           >
-            <Button type="link" danger icon={<DeleteOutlined />}>
+            <Button danger type="link" icon={<DeleteOutlined />}>
               Delete
             </Button>
           </Popconfirm>
@@ -167,7 +175,7 @@ const TemplatesPage = () => {
     <div>
       <Row justify="space-between" align="middle" style={{ marginBottom: 16 }}>
         <Col>
-          <h2>Templates</h2>
+          <h2>User Management</h2>
         </Col>
         <Col>
           <Button
@@ -175,25 +183,25 @@ const TemplatesPage = () => {
             icon={<PlusOutlined />}
             onClick={() => showDrawer()}
           >
-            Add New
+            Add New User
           </Button>
         </Col>
       </Row>
 
-      <Table
-        columns={columns}
-        dataSource={data}
-        bordered
-        pagination={{ pageSize: 5 }}
-      />
+      <Spin spinning={loading}>
+        <Table
+          columns={columns}
+          dataSource={data}
+          pagination={{ pageSize: 6 }}
+          bordered
+        />
+      </Spin>
 
-      {/* Drawer Form */}
       <Drawer
-        title={editingId ? 'Edit Template' : 'Add New Template'}
+        title={editingUser ? 'Edit User' : 'Add New User'}
         width={500}
         onClose={onClose}
-        visible={visible}
-        bodyStyle={{ paddingBottom: 80 }}
+        open={visible}
         footer={
           <div style={{ textAlign: 'right' }}>
             <Button onClick={onClose} style={{ marginRight: 8 }}>
@@ -207,80 +215,59 @@ const TemplatesPage = () => {
       >
         <Form form={form} layout="vertical" onFinish={onFinish}>
           <Form.Item
-            name="templateName"
-            label="Template Name"
-            rules={[{ required: true, message: 'Please enter template name' }]}
+            name="firstName"
+            label="First Name"
+            rules={[{ required: true, message: 'Please enter first name' }]}
           >
-            <Input placeholder="Enter template name" />
+            <Input />
           </Form.Item>
 
           <Form.Item
-            name="type"
-            label="Type"
-            rules={[{ required: true, message: 'Please select template type' }]}
+            name="lastName"
+            label="Last Name"
+            rules={[{ required: true, message: 'Please enter last name' }]}
           >
-            <Select placeholder="Select template type">
-              <Option value="StarRating">Star Rating</Option>
-              <Option value="SmileRating">Smile Rating</Option>
-              <Option value="Questionnaire">Questionnaire</Option>
+            <Input />
+          </Form.Item>
+
+          <Form.Item
+            name="email"
+            label="Email"
+            rules={[{ required: true, type: 'email', message: 'Enter valid email' }]}
+          >
+            <Input />
+          </Form.Item>
+
+          <Form.Item
+            name="phoneNumber"
+            label="Phone Number"
+            rules={[{ required: true, message: 'Enter phone number' }]}
+          >
+            <Input />
+          </Form.Item>
+
+          <Form.Item
+            name="role"
+            label="Role"
+            rules={[{ required: true, message: 'Select role' }]}
+          >
+            <Select>
+              <Option value="company_admin">Company Admin</Option>
+              <Option value="general_user">General User</Option>
             </Select>
           </Form.Item>
 
-          <Form.Item name="requireComment" valuePropName="checked">
-            <Checkbox>Require Comment</Checkbox>
-          </Form.Item>
-
-          <Form.Item name="requireUsername" valuePropName="checked">
-            <Checkbox>Require Username</Checkbox>
+          <Form.Item
+            name="status"
+            label="Status"
+            valuePropName="checked"
+          >
+            <Switch checkedChildren="Active" unCheckedChildren="Inactive" />
           </Form.Item>
         </Form>
       </Drawer>
-
-      {/* Preview Modal */}
-      <Modal
-        title="Template Preview"
-        visible={previewVisible}
-        onCancel={() => setPreviewVisible(false)}
-        footer={null}
-      >
-        {selectedTemplate && (
-          <div>
-            <h3>{selectedTemplate.templateName}</h3>
-            <p>
-              <strong>Type:</strong> {selectedTemplate.type}
-            </p>
-
-            {selectedTemplate.type === 'Questionnaire' &&
-              selectedTemplate.config?.questions?.length > 0 && (
-                <div>
-                  {selectedTemplate.config.questions.map((q, index) => (
-                    <div key={index} style={{ marginBottom: 10 }}>
-                      <p>
-                        <strong>Q{index + 1}:</strong> {q.question}
-                      </p>
-                      {q.type === 'text' ? (
-                        <Input placeholder="Your answer..." disabled />
-                      ) : null}
-                      {q.type === 'rating' ? (
-                        <div>⭐ ⭐ ⭐ ⭐ ⭐</div>
-                      ) : null}
-                    </div>
-                  ))}
-                </div>
-              )}
-
-            {selectedTemplate.type === 'StarRating' && (
-              <div style={{ fontSize: '20px' }}>⭐ ⭐ ⭐ ⭐ ⭐</div>
-            )}
-
-            {selectedTemplate.type === 'SmileRating' && (
-              <div style={{ fontSize: '24px' }}>😞 😐 😀</div>
-            )}
-          </div>
-        )}
-      </Modal>
     </div>
   );
 };
 
-export default TemplatesPage;
+export default UsersPage;
