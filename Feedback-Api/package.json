@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "netlify deploy --prod"
+    "server": "nodemon server.js",
+    "start": "nodemon server.js"
   },
   "keywords": [],
   "author": "",
@@ -19,6 +20,7 @@
     "netlify-cli": "^20.1.1",
     "netlify-lambda": "^2.0.16",
     "nodemailer": "^6.10.1",
+    "nodemon": "^3.1.10",
     "path": "^0.12.7",
     "serverless-http": "^3.2.0"
   }

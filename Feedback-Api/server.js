@@ -76,11 +76,53 @@ app.post('/api/login', (req, res) => {
 // Create company (system admin only)
 app.post('/api/companies', authMiddleware, (req, res) => {
   if (req.user.role !== 'system_admin') return res.sendStatus(403);
+
   const companies = readJSON(companiesFile);
-  const newCompany = { id: Date.now(), name: req.body.name };
+
+  const { name, email, address, reviewOptions } = req.body;
+
+  if (!name || !email || !address || !reviewOptions) {
+    return res.status(400).json({ message: 'All fields including reviewOptions are required' });
+  }
+
+  const newCompany = {
+    id: Date.now(),
+    name,
+    email,
+    address,
+    reviewOptions, // expects { google, tripAdvisor, facebook, other }
+  };
+
   companies.push(newCompany);
   writeJSON(companiesFile, companies);
+
   res.status(201).json(newCompany);
+});
+
+app.get('/api/companies', authMiddleware, (req, res) => {
+  const companies = readJSON(companiesFile);
+  res.json(companies);
+});
+
+// DELETE /api/companies/:id
+app.delete('/api/companies/:id', (req, res) => {
+  const { id } = req.params;
+
+  const companies = readJSON(companiesFile);
+  const index = companies.findIndex(c => c.id === Number(id)); // convert id to number
+
+  if (index === -1) {
+    return res.status(404).json({ message: 'Company not found' });
+  }
+
+  companies.splice(index, 1);
+
+  try {
+    writeJSON(companiesFile, companies);
+    res.json({ message: 'Company deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to save data' });
+  }
 });
 
 // Create user (system admin only)
