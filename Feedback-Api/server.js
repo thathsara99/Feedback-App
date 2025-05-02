@@ -39,13 +39,19 @@ const transporter = nodemailer.createTransport({
 });
 
 const sendPasswordEmail = async (email, password) => {
-  await transporter.sendMail({
-    from: 'technical.support@pathtosuccessconsultants.co.uk',
-    to: email,
-    subject: 'Your Account Credentials',
-    text: `Your login password: ${password}`
-  });
+  try {
+    await transporter.sendMail({
+      from: 'tcroos365@gmail.com',
+      to: email,
+      subject: 'Your Account Credentials',
+      text: `Your login password: ${password}`
+    });
+    console.log("Email sent to:", email);
+  } catch (error) {
+    console.error("Failed to send email:", error.message);
+  }
 };
+
 
 const authMiddleware = (req, res, next) => {
   const token = req.headers.authorization?.split(' ')[1];
@@ -99,6 +105,50 @@ app.post('/api/companies', authMiddleware, (req, res) => {
   res.status(201).json(newCompany);
 });
 
+// Update company (system admin only)
+app.put('/api/companies/:id', authMiddleware, (req, res) => {
+  if (req.user.role !== 'system_admin') return res.sendStatus(403);
+
+  // Parse the id from route params and ensure it’s a number
+  const companyId = Number(req.params.id);
+
+  // Load current companies
+  const companies = readJSON(companiesFile);
+
+  // Find the index of the company to update
+  const idx = companies.findIndex(c => c.id === companyId);
+  if (idx === -1) {
+    return res.status(404).json({ message: 'Company not found' });
+  }
+
+  // Destructure incoming fields
+  const { name, email, address, reviewOptions } = req.body;
+
+  // Validate required fields (you can adjust as needed)
+  if (!name || !email || !address || !reviewOptions) {
+    return res.status(400).json({ message: 'All fields including reviewOptions are required' });
+  }
+
+  // Build the updated company object
+  const updatedCompany = {
+    ...companies[idx],
+    name,
+    email,
+    address,
+    reviewOptions,
+  };
+
+  // Replace in array and save
+  companies[idx] = updatedCompany;
+  try {
+    writeJSON(companiesFile, companies);
+    res.json(updatedCompany);
+  } catch (err) {
+    console.error('Failed to write companies:', err);
+    res.status(500).json({ message: 'Failed to save company' });
+  }
+});
+
 app.get('/api/companies', authMiddleware, (req, res) => {
   const companies = readJSON(companiesFile);
   res.json(companies);
@@ -125,37 +175,104 @@ app.delete('/api/companies/:id', (req, res) => {
   }
 });
 
+app.get('/api/users', authMiddleware, (req, res) => {
+  const users = readJSON(usersFile);
+  res.json(users);
+});
+
 // Create user (system admin only)
 app.post('/api/users', authMiddleware, async (req, res) => {
-    if (req.user.role !== 'system_admin') return res.sendStatus(403);
-  
-    const { email, password, role, companyId } = req.body;
-  
-    // Only allow creating users with role "company_admin"
-    if (role !== 'company_admin') {
-      return res.status(400).json({ message: 'Only company_admin users can be created.' });
-    }
-  
-    const users = readJSON(usersFile);
-    if (users.some(u => u.email === email)) {
-      return res.status(400).json({ message: 'User already exists.' });
-    }
-  
-    const passwordHash = await bcrypt.hash(password, 10);
-    const newUser = {
-      id: Date.now(),
-      email,
-      password: passwordHash,
-      role,
-      companyId
-    };
-  
-    users.push(newUser);
-    writeJSON(usersFile, users);
-  
+  const { firstName, lastName, email, phoneNumber, role, status, companyId } = req.body;
+  console.log("user creation". email)
+  if (!['company_admin', 'general_user'].includes(role)) {
+    return res.status(400).json({ message: 'Invalid role type.' });
+  }
+
+  const users = readJSON(usersFile);
+  if (users.some(u => u.email === email)) {
+    return res.status(400).json({ message: 'User already exists.' });
+  }
+
+  const password = generateRandomPassword(); // Implement this function
+  const passwordHash = await bcrypt.hash(password, 10);
+
+  const newUser = {
+    id: Date.now(),
+    firstName,
+    lastName,
+    email,
+    phoneNumber,
+    role,
+    status: status === 'active',
+    password: passwordHash,
+    companyId
+  };
+
+  try {
     await sendPasswordEmail(email, password);
-    res.status(201).json({ message: 'User created successfully.' });
+  } catch (error) {
+    console.error("Email sending failed:", error.message);
+    return res.status(400).json({ message: 'Email sending failed' });
+  }
+
+  users.push(newUser);
+  writeJSON(usersFile, users);
+  
+  res.status(201).json({ message: 'User created successfully.' });
 });
+
+function generateRandomPassword(length = 8) {
+  return Math.random().toString(36).slice(-length);
+}
+
+//Update User
+app.put('/api/users/:id', authMiddleware, async (req, res) => {
+  const { id } = req.params;
+  const { firstName, lastName, phoneNumber, role, status } = req.body;
+
+  const users = readJSON(usersFile);
+  const userIndex = users.findIndex(u => u.id === parseInt(id));
+
+  if (userIndex === -1) {
+    return res.status(404).json({ message: 'User not found.' });
+  }
+
+  // Validate role
+  if (role && !['company_admin', 'general_user'].includes(role)) {
+    return res.status(400).json({ message: 'Invalid role type.' });
+  }
+
+  const user = users[userIndex];
+  users[userIndex] = {
+    ...user,
+    firstName: firstName ?? user.firstName,
+    lastName: lastName ?? user.lastName,
+    phoneNumber: phoneNumber ?? user.phoneNumber,
+    role: role ?? user.role,
+    status: typeof status === 'boolean' ? status : user.status
+  };
+
+  writeJSON(usersFile, users);
+  res.json({ message: 'User updated successfully.' });
+});
+
+//Delete User
+app.delete('/api/users/:id', authMiddleware, (req, res) => {
+  const { id } = req.params;
+  const users = readJSON(usersFile);
+
+  const userIndex = users.findIndex(u => u.id === parseInt(id));
+
+  if (userIndex === -1) {
+    return res.status(404).json({ message: 'User not found.' });
+  }
+
+  users.splice(userIndex, 1);
+  writeJSON(usersFile, users);
+
+  res.json({ message: 'User deleted successfully.' });
+});
+
 
 //Forgot Password
 app.post('/api/reset-password', async (req, res) => {

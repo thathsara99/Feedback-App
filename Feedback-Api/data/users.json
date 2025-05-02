@@ -5,6 +5,18 @@
     "email": "admin@example.com",
     "password": "$2b$10$Cgy00QyC9Tf6zYHiXT8gt.Wo7hlQuY/tuulzsUeaYhptk6/UvbRtm",
     "role": "system_admin",
+    "status": true,
     "companyId": null
+  },
+  {
+    "id": 1746207133156,
+    "firstName": "Thathsara",
+    "lastName": "croos",
+    "email": "thathsarapramuditha9@gmail.com",
+    "phoneNumber": "+44 7950 987131",
+    "role": "company_admin",
+    "status": false,
+    "password": "$2b$10$lMbS8rHr83WviNRsjnByeOYYuaLY0StTel0CWPdJHDuFeJnI8l7/O",
+    "companyId": "1746200263776"
   }
 ]
