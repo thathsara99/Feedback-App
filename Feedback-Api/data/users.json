@@ -1,0 +1,10 @@
+[
+  {
+    "id": "1746178690804",
+    "name": "Super Admin",
+    "email": "admin@example.com",
+    "password": "$2b$12$tOH9ZZ6DRYqpRrpqTXCPDOsMwBnCOXhisuEGqEMaAbqn0ak2ZrqWa",
+    "role": "system_admin",
+    "companyId": null
+  }
+]

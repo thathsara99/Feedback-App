@@ -1,0 +1,25 @@
+{
+  "name": "feedback-app-backend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "netlify deploy --prod"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bcrypt": "^5.1.1",
+    "body-parser": "^2.2.0",
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "fs": "^0.0.1-security",
+    "jsonwebtoken": "^9.0.2",
+    "netlify-cli": "^20.1.1",
+    "netlify-lambda": "^2.0.16",
+    "nodemailer": "^6.10.1",
+    "path": "^0.12.7",
+    "serverless-http": "^3.2.0"
+  }
+}
