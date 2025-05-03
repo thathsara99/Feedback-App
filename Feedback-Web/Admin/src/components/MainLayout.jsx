@@ -1,15 +1,17 @@
 import React, { useState } from "react";
-import { Layout, Menu, Switch, Avatar, Typography, Space, Divider, Dropdown } from "antd";
-import { UserOutlined, HomeOutlined, InfoCircleOutlined, LogoutOutlined } from "@ant-design/icons";
+import { Layout, Menu, Switch, Avatar, Typography, Space, Divider, Dropdown,Button, } from "antd";
+import { UserOutlined, HomeOutlined, InfoCircleOutlined, LogoutOutlined,DownOutlined, CheckOutlined } from "@ant-design/icons";
 import { Link, useNavigate } from "react-router-dom";
 import { ConfigProvider, theme } from "antd";
 
 const { Header, Content, Footer } = Layout;
 const { Title } = Typography;
+const items = ["Company 1", "Company 2", "Company 3"];
 
 const MainLayout = ({ children }) => {
   const [darkMode, setDarkMode] = useState(false);
   const navigate = useNavigate();
+  const [selected, setSelected] = useState(null);
 
   // Header background colors (using blue shades for both modes)
   const headerBgColor = darkMode ? '#001529' : '#001529';
@@ -22,6 +24,30 @@ const MainLayout = ({ children }) => {
   // Redirect to login page
   navigate('/login');
   };
+
+  const menu = (
+    <Menu  style={{
+      backgroundColor: "#1f1f1f", // Dark background
+      color: "#fff",
+      borderRadius: 8,
+      padding: "4px 0",
+    }}>
+      {items.map((item) => (
+        <Menu.Item
+          key={item}
+          onClick={() => setSelected(item)}
+          icon={item === selected ? <CheckOutlined /> : null}
+          style={{
+            backgroundColor: "transparent",
+            color: "#fff",
+            padding: "8px 16px",
+          }}
+        >
+          {item}
+        </Menu.Item>
+      ))}
+    </Menu>
+  );
 
   const userMenu = (
     <Menu
@@ -81,6 +107,32 @@ const MainLayout = ({ children }) => {
               <Link to="/" style={{ color: 'inherit' }}>FeedbackApp</Link>
             </Title>
             <Divider type="vertical" style={{ height: 32, margin: 0, backgroundColor: 'rgba(255, 255, 255, 0.2)' }} />
+            <ConfigProvider
+      theme={{
+        components: {
+          Button: {
+            colorBgContainer: "#1f1f1f",
+            colorText: "#fff",
+            borderRadius: 6,
+          },
+        },
+      }}
+    >
+      <Dropdown overlay={menu} trigger={["click"]}>
+        <Button
+          style={{
+            backgroundColor: "#1f1f1f",
+            color: "#fff",
+            borderColor: "#333",
+            padding: "6px 12px",
+            borderRadius: 6,
+          }}
+        >
+          {selected || "Select Company"} <DownOutlined />
+        </Button>
+      </Dropdown>
+    </ConfigProvider>
+    <Divider type="vertical" style={{ height: 32, margin: 0, backgroundColor: 'rgba(255, 255, 255, 0.2)' }} />
             <Menu
               theme="dark" // Always dark menu for contrast against header
               mode="horizontal"
@@ -88,7 +140,8 @@ const MainLayout = ({ children }) => {
               style={{ 
                 borderBottom: 'none',
                 lineHeight: '62px',
-                backgroundColor: 'transparent'
+                backgroundColor: 'transparent',
+                width:'600px'
               }}
               items={[
                 { 
