@@ -25,6 +25,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useEffect } from 'react';
+import Logo from '../vintage-tea-emporium-logo-white.png'
 
 //import logo from './logo.svg'; // Replace with your logo
 
@@ -61,10 +62,17 @@ const LoginPage = () => {
   };
 
   return (
-    <Layout style={{ minHeight: '100vh', background: '#f0f2f5' }}>
-      <Content style={{ padding: '24px' }}>
+    <Layout style={{ minHeight: '100vh', background: '#f0f2f5' }} >
+      <Content style={{ padding: '24px' }} className='login'>
         <Row justify="center" align="middle" style={{ height: '100%' }}>
           <Col xs={24} sm={20} md={16} lg={12} xl={8}>
+           <center>
+                  <img
+                        src={Logo}
+                        style={{ width: "40%" }}
+                      />  
+                  </center>
+                  <br/>
             <Card
               style={{
                 borderRadius: '8px',
