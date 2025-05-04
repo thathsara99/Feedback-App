@@ -5,7 +5,7 @@
 
 .title {
     font-family: "Berkshire Swash", serif!important;
-    font-size: 5em;
+    font-size: 3em;
 }
 .ant-typography {
     font-family: "Poppins", sans-serif!important;
@@ -27,4 +27,8 @@ button:hover, .ant-btn:hover {
     padding: 10px;
     border-radius: 12px;
     background-color:rgba(255, 99, 71, 0.2);
+}
+.logo {position: fixed;
+right: 10px;
+bottom: 10px;
 }

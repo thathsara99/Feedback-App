@@ -56,11 +56,12 @@ function LoginPage() {
     >
       
       <Row>
-        <Col md={6}>
+        <Col md={4}>
         </Col>
-        <Col md={12}>
+        <Col md={16}>
         <center>
         <img
+        className="logo"
               src={Logo}
               style={{ width: "20%" }}
             />  
@@ -78,11 +79,11 @@ function LoginPage() {
       </Row>
       
 
-      <Row gutter={24} style={{ marginTop: 40 }}>
+      <Row gutter={24} style={{ marginTop: 10 }}>
         {/* Google Review Card */}
-        <Col md={6}>
+        <Col md={4}>
         </Col>
-        <Col md={6} xs={24}>
+        <Col md={8} xs={24}>
           <Card
             hoverable
             style={{
@@ -103,7 +104,7 @@ function LoginPage() {
         </Col>
 
         {/* TripAdvisor Review Card */}
-        <Col md={6} xs={24}>
+        <Col md={8} xs={24}>
           <Card
             hoverable
             style={{
@@ -130,9 +131,9 @@ function LoginPage() {
 
       <Row gutter={24} >
         {/* Google Review Card */}
-        <Col md={6}>
+        <Col md={4}>
         </Col>
-        <Col md={6} xs={24}>
+        <Col md={8} xs={24}>
           <Card
             hoverable
             style={{
@@ -153,7 +154,7 @@ function LoginPage() {
         </Col>
 
         {/* TripAdvisor Review Card */}
-        <Col md={6} xs={24}>
+        <Col md={8} xs={24}>
           <Card
             hoverable
             style={{
