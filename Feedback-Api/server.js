@@ -13,7 +13,7 @@ app.use(cors({
     origin: '*'
 }));
 
-const SECRET_KEY = 'your_secret_key';
+const SECRET_KEY = 'mogu_jwt_main_secret';
 
 app.use(bodyParser.json());
 
@@ -149,6 +149,25 @@ app.put('/api/companies/:id', authMiddleware, (req, res) => {
   }
 });
 
+app.get('/api/my-companies', authMiddleware, (req, res) => {
+  const companies = readJSON(companiesFile);
+  const user = req.user;
+
+  if (user.role === 'system_admin') {
+    // Return all companies
+    res.json(companies);
+  } else {
+    // Return only the company the user belongs to
+    const userCompany = companies.find(c => c.id === user.companyId);
+    if (userCompany) {
+      res.json([userCompany]);
+    } else {
+      res.status(404).json({ message: "Company not found" });
+    }
+  }
+});
+
+
 app.get('/api/companies', authMiddleware, (req, res) => {
   const companies = readJSON(companiesFile);
   res.json(companies);
@@ -175,12 +194,20 @@ app.delete('/api/companies/:id', (req, res) => {
   }
 });
 
+//Users By Company
 app.get('/api/users', authMiddleware, (req, res) => {
   const users = readJSON(usersFile);
-  res.json(users);
+  const { companyId } = req.query;
+
+  if (!companyId) {
+    return res.status(400).json({ message: 'companyId is required' });
+  }
+
+  const filteredUsers = users.filter(user => user.companyId === companyId);
+  res.json(filteredUsers);
 });
 
-// Create user (system admin only)
+// Create user
 app.post('/api/users', authMiddleware, async (req, res) => {
   const { firstName, lastName, email, phoneNumber, role, status, companyId } = req.body;
   console.log("user creation". email)
