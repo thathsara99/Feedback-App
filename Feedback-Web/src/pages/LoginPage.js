@@ -79,7 +79,7 @@ function LoginPage() {
       </Row>
       
 
-      <Row gutter={24} style={{ marginTop: 10 }}>
+      <Row gutter={18}>
         {/* Google Review Card */}
         <Col md={2}>
         </Col>
@@ -92,7 +92,7 @@ function LoginPage() {
               backgroundColor: "#E03F32",
               border: "1px solid #fff",
               color: "#fff",
-              marginTop:"22px"
+              marginTop:"18px"
             }}
             onClick={handleGoogleClick}
           >
@@ -113,7 +113,7 @@ function LoginPage() {
               backgroundColor: "#1CBA80",
               border: "1px solid #fff",
               color: "#fff",
-               marginTop:"22px"
+               marginTop:"18px"
             }}
             onClick={handleTripAdvisorClick}
           >
@@ -129,7 +129,7 @@ function LoginPage() {
         </Col>
       </Row>
 
-      <Row gutter={24} >
+      <Row gutter={18} >
         {/* Google Review Card */}
         <Col md={2}>
         </Col>
@@ -142,7 +142,7 @@ function LoginPage() {
               backgroundColor: "#0866FF",
               border: "1px solid #fff",
               color: "#fff",
-              marginTop:"22px"
+              marginTop:"18px"
             }}
             onClick={handleFacebookClick}
           >
@@ -163,7 +163,7 @@ function LoginPage() {
               backgroundColor: "#EE6C4D",
               border: "1px solid #fff",
               color: "#fff",
-               marginTop:"22px"
+               marginTop:"18px"
             }}
             onClick={handleLeaveOtherReview}
           >
