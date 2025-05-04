@@ -207,6 +207,43 @@ app.get('/api/users', authMiddleware, (req, res) => {
   res.json(filteredUsers);
 });
 
+//Update User profile picture
+app.put('/api/profile', authMiddleware, (req, res) => {
+  const users = readJSON(usersFile);
+  const userId = req.user.id;
+
+  const userIndex = users.findIndex(u => u.id === userId);
+
+  if (userIndex === -1) {
+    return res.status(404).json({ message: 'User not found' });
+  }
+
+  const updatedFields = req.body;
+  console.log(updatedFields)
+  users[userIndex] = {
+    ...users[userIndex],
+    ...updatedFields,
+  };
+
+  writeJSON(usersFile, users);
+
+  res.json({ message: 'Profile updated', user: users[userIndex] });
+});
+
+//Fetch User Profile
+app.get('/api/profile', authMiddleware, (req, res) => {
+  const users = readJSON(usersFile);
+  const userId = req.user.id;
+
+  const userProfile = users.find(u => u.id === userId);
+
+  if (!userProfile) {
+    return res.status(404).json({ message: 'User not found' });
+  }
+
+  res.json(userProfile);
+});
+
 // Create user
 app.post('/api/users', authMiddleware, async (req, res) => {
   const { firstName, lastName, email, phoneNumber, role, status, companyId } = req.body;
@@ -220,6 +257,7 @@ app.post('/api/users', authMiddleware, async (req, res) => {
     return res.status(400).json({ message: 'User already exists.' });
   }
 
+  let profilePic ="";
   const password = generateRandomPassword(); // Implement this function
   const passwordHash = await bcrypt.hash(password, 10);
 
@@ -232,7 +270,8 @@ app.post('/api/users', authMiddleware, async (req, res) => {
     role,
     status: status === 'active',
     password: passwordHash,
-    companyId
+    companyId,
+    profilePic
   };
 
   try {

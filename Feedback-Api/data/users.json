@@ -1,12 +1,15 @@
 [
   {
     "id": "1746178690804",
-    "name": "Super Admin",
+    "firstName": "Vintage",
+    "lastName": "Emporium",
     "email": "admin@example.com",
+    "phoneNumber": "+44 7950 987131",
     "password": "$2b$10$Cgy00QyC9Tf6zYHiXT8gt.Wo7hlQuY/tuulzsUeaYhptk6/UvbRtm",
     "role": "system_admin",
     "status": true,
-    "companyId": null
+    "companyId": null,
+    "profilePic": "https://res.cloudinary.com/dq6bxromn/image/upload/v1746380508/Black_Minimalist_Motivation_Quote_LinkedIn_Banner_eltxbx.png"
   },
   {
     "id": 1746207133156,

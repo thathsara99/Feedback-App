@@ -177,7 +177,7 @@ const MainLayout = ({ children }) => {
                 {
                   key: "1",
                   label: (
-                    <Link to="/" style={{ color: headerTextColor }}>
+                    <Link to="/home" style={{ color: headerTextColor }}>
                       Dashboard
                     </Link>
                   ),

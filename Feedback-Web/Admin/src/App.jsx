@@ -4,6 +4,7 @@ import MainLayout from "./components/MainLayout";
 import Home from "./pages/Home";
 import Templates from "./pages/Templates";
 import Companies from "./pages/Company";
+import Profile from "./pages/profile";
 import User from "./pages/User";
 import Login from "./pages/Login";
 import ForgotPasswordPage from "./pages/ForgotPassword";
@@ -37,6 +38,7 @@ function App() {
               <Route path="/templates" element={<MainLayout><Templates /></MainLayout>} />
               <Route path="/companies" element={<MainLayout><Companies /></MainLayout>} />
               <Route path="/users" element={<MainLayout><User /></MainLayout>} />
+              <Route path="/profile" element={<MainLayout><Profile /></MainLayout>} />
             </Routes>
           </CompanyProvider>
         }
