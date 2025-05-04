@@ -171,6 +171,7 @@ const MainLayout = ({ children }) => {
                 borderBottom: "none",
                 backgroundColor: "transparent",
                 lineHeight: "62px",
+                width:'600px'
               }}
               items={[
                 {
