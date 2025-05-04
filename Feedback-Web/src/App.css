@@ -5,7 +5,7 @@
 
 .title {
     font-family: "Berkshire Swash", serif!important;
-    font-size: 3em;
+    font-size: 2.5em;
 }
 .ant-typography {
     font-family: "Poppins", sans-serif!important;
@@ -24,11 +24,15 @@ button:hover, .ant-btn:hover {
 }
 .overlay {
     background: #fff;
-    padding: 10px;
+    padding: 6px;
     border-radius: 12px;
     background-color:rgba(255, 99, 71, 0.2);
 }
 .logo {position: fixed;
 right: 10px;
 bottom: 10px;
+}
+.ant-card .ant-card-body {
+    padding: 14px!important;
+    border-radius: 0 0 8px 8px;
 }
