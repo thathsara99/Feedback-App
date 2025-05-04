@@ -20,6 +20,8 @@ import {
   PlusOutlined,
 } from '@ant-design/icons';
 import axios from 'axios';
+import { useCompany } from "../contexts/CompanyContext";
+import { Tooltip } from 'antd';
 const token = localStorage.getItem('token');
 
 const { Option } = Select;
@@ -37,12 +39,17 @@ const UsersPage = () => {
   const [editingUser, setEditingUser] = useState(null);
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
+  const { selectedCompany } = useCompany();
 
   // Fetch user list
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const response = await axiosInstance.get('/api/users');
+      const response = await axiosInstance.get('/api/users', {
+        params: {
+          companyId: selectedCompany?.id,
+        },
+      });
       const users = response.data.map((user) => ({
         ...user,
         key: user._id,
@@ -57,7 +64,8 @@ const UsersPage = () => {
 
   useEffect(() => {
     fetchUsers();
-  }, []);
+    console.log('Selected company:', selectedCompany);
+  },  [selectedCompany]);
 
   const showDrawer = (record = null) => {
     if (record) {
@@ -85,7 +93,7 @@ const UsersPage = () => {
       const payload = {
         ...values,
         status: values.status || false, // not `active`
-        companyId: '1746200263776',
+        companyId: String(selectedCompany?.id),
       };
 
       if (editingUser) {
@@ -158,7 +166,7 @@ role === 'general_user' ? 'General User' : 'Unknown Role',
           </Button>
           <Popconfirm
             title="Are you sure to delete this user?"
-            onConfirm={() => handleDelete(record._id)}
+            onConfirm={() => handleDelete(record.id)}
             okText="Yes"
             cancelText="No"
           >
@@ -178,13 +186,19 @@ role === 'general_user' ? 'General User' : 'Unknown Role',
           <h2>User Management</h2>
         </Col>
         <Col>
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => showDrawer()}
+          <Tooltip
+            title={!selectedCompany ? 'Please select a company to add users' : ''}
+            placement="top"
           >
-            Add New User
-          </Button>
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => showDrawer()}
+              disabled={!selectedCompany}
+            >
+              Add New User
+            </Button>
+          </Tooltip>
         </Col>
       </Row>
 

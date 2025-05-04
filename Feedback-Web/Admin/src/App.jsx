@@ -7,6 +7,7 @@ import Companies from "./pages/Company";
 import User from "./pages/User";
 import Login from "./pages/Login";
 import ForgotPasswordPage from "./pages/ForgotPassword";
+import { CompanyProvider } from "./contexts/CompanyContext";
 
 // Simple auth check using token from localStorage
 const isAuthenticated = () => !!localStorage.getItem("token");
@@ -27,41 +28,19 @@ function App() {
 
       {/* Protected routes inside MainLayout */}
       {isAuthenticated() && (
-        <>
-          <Route
-            path="/home"
-            element={
-              <MainLayout>
-                <Home />
-              </MainLayout>
-            }
-          />
-          <Route
-            path="/templates"
-            element={
-              <MainLayout>
-                <Templates />
-              </MainLayout>
-            }
-          />
-          <Route
-            path="/companies"
-            element={
-              <MainLayout>
-                <Companies />
-              </MainLayout>
-            }
-          />
-
-          <Route
-            path="/users"
-            element={
-              <MainLayout>
-                <User />
-              </MainLayout>
-            }
-          />
-        </>
+        <Route
+        path="/*"
+        element={
+          <CompanyProvider>
+            <Routes>
+              <Route path="/home" element={<MainLayout><Home /></MainLayout>} />
+              <Route path="/templates" element={<MainLayout><Templates /></MainLayout>} />
+              <Route path="/companies" element={<MainLayout><Companies /></MainLayout>} />
+              <Route path="/users" element={<MainLayout><User /></MainLayout>} />
+            </Routes>
+          </CompanyProvider>
+        }
+      />
       )}
 
       {/* Catch-all route for unauthorized access */}
