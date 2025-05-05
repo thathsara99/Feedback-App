@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import {
   Table,
   Button,
@@ -18,99 +19,109 @@ import {
   EditOutlined,
   DeleteOutlined,
   PlusOutlined,
+  MinusCircleOutlined,
 } from '@ant-design/icons';
+import { Tooltip } from 'antd';
+import { useCompany } from '../contexts/CompanyContext';
 
 const { Option } = Select;
 
 const TemplatesPage = () => {
   const [form] = Form.useForm();
-  const [visible, setVisible] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [previewVisible, setPreviewVisible] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
+  const [selectedType, setSelectedType] = useState(null);
+  const [data, setData] = useState([]);
+  const { selectedCompany } = useCompany();
 
-  const [data, setData] = useState([
-    {
-      key: '1',
-      templateName: 'Star Rating Template',
-      type: 'StarRating',
-      requireComment: true,
-      requireUsername: false,
+  const axiosInstance = axios.create({
+    baseURL: 'http://localhost:5000',
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem('token')}`,
     },
-    {
-      key: '2',
-      templateName: 'Smile Rating Template',
-      type: 'SmileRating',
-      requireComment: false,
-      requireUsername: true,
-    },
-    {
-      key: '3',
-      templateName: 'Customer Feedback',
-      type: 'Questionnaire',
-      requireComment: true,
-      requireUsername: true,
-      config: {
-        questions: [
-          { question: 'How was our service?', type: 'text' },
-          { question: 'Rate the cleanliness.', type: 'rating' },
-        ],
-      },
-    },
-  ]);
+  });
+
+  const fetchTemplates = async () => {
+    if (!selectedCompany?.id) return;
+    try {
+      const res = await axiosInstance.get(`/api/templatesByCompany`, {
+        params: { id: selectedCompany.id },
+      });
+      const templates = Array.isArray(res.data) ? res.data : [res.data];
+      const mapped = templates.map((t) => ({ ...t, key: t.id }));
+      setData(mapped);
+    } catch (err) {
+      console.error(err);
+      message.error('Failed to load templates');
+    }
+  };
+
+  useEffect(() => {
+    fetchTemplates();
+  }, [selectedCompany]);
 
   const showDrawer = (record = null) => {
     if (record) {
-      form.setFieldsValue(record);
-      setEditingId(record.key);
+      form.setFieldsValue({
+        ...record,
+        questions: record.config?.questions || [],
+      });
+      setSelectedType(record.type);
+      setEditingId(record.id);
     } else {
       form.resetFields();
+      setSelectedType(null);
       setEditingId(null);
     }
-    setVisible(true);
+    setDrawerOpen(true);
   };
 
   const onClose = () => {
-    setVisible(false);
+    setDrawerOpen(false);
   };
 
-  const onFinish = (values) => {
-    if (editingId) {
-      // Update existing record
-      setData((prev) =>
-        prev.map((item) =>
-          item.key === editingId
-            ? { ...item, ...values }
-            : item
-        )
-      );
-      message.success('Template updated successfully');
-    } else {
-      // Add new record
-      const newRecord = {
-        ...values,
-        key: Date.now().toString(),
+  const onFinish = async (values) => {
+    try {
+      const newTemplate = {
+        companyId: selectedCompany.id,
+        templateName: values.templateName,
+        type: values.type,
+        requireComment: !!values.requireComment,
+        requireUsername: !!values.requireUsername,
+        config:
+          values.type === 'Questionnaire' ? { questions: values.questions || [] } : {},
       };
 
-      // Add dummy config if type is Questionnaire
-      if (newRecord.type === 'Questionnaire') {
-        newRecord.config = {
-          questions: [
-            { question: 'New question 1?', type: 'text' },
-            { question: 'New question 2?', type: 'rating' },
-          ],
-        };
+      console.log('Submitting template:', newTemplate);
+
+      if (editingId) {
+        newTemplate.id = editingId;
+        await axiosInstance.put('/api/templates', newTemplate);
+        message.success('Template updated');
+      } else {
+        await axiosInstance.post('/api/templates', newTemplate);
+        message.success('Template added');
       }
 
-      setData((prev) => [...prev, newRecord]);
-      message.success('Template added successfully');
+      onClose();
+      fetchTemplates();
+    } catch (err) {
+      console.error(err);
+      message.error('Error saving template');
     }
-    setVisible(false);
   };
 
-  const handleDelete = (key) => {
-    setData((prev) => prev.filter((item) => item.key !== key));
-    message.success('Template deleted successfully');
+  const handleDelete = async (id) => {
+    try {
+      await axiosInstance.delete(`/api/templates/${id}`);
+      message.success('Template deleted');
+      fetchTemplates();
+    } catch (err) {
+      console.error(err);
+      message.error('Error deleting template');
+    }
   };
 
   const columns = [
@@ -127,30 +138,20 @@ const TemplatesPage = () => {
     {
       title: 'Action',
       key: 'action',
-      width: 250,
       render: (_, record) => (
-        <Space size="middle">
-          <Button
-            type="link"
-            icon={<EditOutlined />}
-            onClick={() => showDrawer(record)}
-          >
+        <Space>
+          <Button type="link" icon={<EditOutlined />} onClick={() => showDrawer(record)}>
             Edit
           </Button>
-
-          <Button
-            type="link"
-            onClick={() => {
-              setSelectedTemplate(record);
-              setPreviewVisible(true);
-            }}
-          >
+          <Button type="link" onClick={() => {
+            setSelectedTemplate(record);
+            setPreviewVisible(true);
+          }}>
             Preview
           </Button>
-
           <Popconfirm
             title="Are you sure to delete this template?"
-            onConfirm={() => handleDelete(record.key)}
+            onConfirm={() => handleDelete(record.id)}
             okText="Yes"
             cancelText="No"
           >
@@ -170,29 +171,26 @@ const TemplatesPage = () => {
           <h2>Templates</h2>
         </Col>
         <Col>
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => showDrawer()}
-          >
+        <Tooltip
+        title={!selectedCompany ? 'Please select a company to add Template' : ''}
+        placement="top">
+          <Button type="primary"
+                        icon={<PlusOutlined />}
+                        onClick={() => showDrawer()}
+                        disabled={!selectedCompany}>
             Add New
           </Button>
+          </Tooltip>
         </Col>
       </Row>
 
-      <Table
-        columns={columns}
-        dataSource={data}
-        bordered
-        pagination={{ pageSize: 5 }}
-      />
+      <Table columns={columns} dataSource={data} bordered pagination={{ pageSize: 5 }} />
 
-      {/* Drawer Form */}
       <Drawer
         title={editingId ? 'Edit Template' : 'Add New Template'}
-        width={500}
+        width={600}
+        open={drawerOpen}
         onClose={onClose}
-        visible={visible}
         bodyStyle={{ paddingBottom: 80 }}
         footer={
           <div style={{ textAlign: 'right' }}>
@@ -211,7 +209,7 @@ const TemplatesPage = () => {
             label="Template Name"
             rules={[{ required: true, message: 'Please enter template name' }]}
           >
-            <Input placeholder="Enter template name" />
+            <Input />
           </Form.Item>
 
           <Form.Item
@@ -219,7 +217,7 @@ const TemplatesPage = () => {
             label="Type"
             rules={[{ required: true, message: 'Please select template type' }]}
           >
-            <Select placeholder="Select template type">
+            <Select onChange={(value) => setSelectedType(value)}>
               <Option value="StarRating">Star Rating</Option>
               <Option value="SmileRating">Smile Rating</Option>
               <Option value="Questionnaire">Questionnaire</Option>
@@ -233,48 +231,69 @@ const TemplatesPage = () => {
           <Form.Item name="requireUsername" valuePropName="checked">
             <Checkbox>Require Username</Checkbox>
           </Form.Item>
+
+          {selectedType === 'Questionnaire' && (
+            <Form.List name="questions">
+              {(fields, { add, remove }) => (
+                <>
+                  <h4>Questions</h4>
+                  {fields.map(({ key, name, ...restField }) => (
+                    <Space key={key} style={{ display: 'flex', marginBottom: 8 }} align="baseline">
+                      <Form.Item
+                        {...restField}
+                        name={[name, 'question']}
+                        rules={[{ required: true, message: 'Enter question' }]}
+                      >
+                        <Input placeholder="Question" />
+                      </Form.Item>
+                      <Form.Item
+                        {...restField}
+                        name={[name, 'type']}
+                        rules={[{ required: true, message: 'Select type' }]}
+                      >
+                        <Select placeholder="Type" style={{ width: 120 }}>
+                          <Option value="text">Text</Option>
+                          <Option value="rating">Rating</Option>
+                        </Select>
+                      </Form.Item>
+                      <MinusCircleOutlined onClick={() => remove(name)} />
+                    </Space>
+                  ))}
+                  <Form.Item>
+                    <Button type="dashed" onClick={() => add()} block icon={<PlusOutlined />}>
+                      Add Question
+                    </Button>
+                  </Form.Item>
+                </>
+              )}
+            </Form.List>
+          )}
         </Form>
       </Drawer>
 
-      {/* Preview Modal */}
       <Modal
         title="Template Preview"
-        visible={previewVisible}
+        open={previewVisible}
         onCancel={() => setPreviewVisible(false)}
         footer={null}
       >
         {selectedTemplate && (
           <div>
             <h3>{selectedTemplate.templateName}</h3>
-            <p>
-              <strong>Type:</strong> {selectedTemplate.type}
-            </p>
-
-            {selectedTemplate.type === 'Questionnaire' &&
-              selectedTemplate.config?.questions?.length > 0 && (
-                <div>
-                  {selectedTemplate.config.questions.map((q, index) => (
-                    <div key={index} style={{ marginBottom: 10 }}>
-                      <p>
-                        <strong>Q{index + 1}:</strong> {q.question}
-                      </p>
-                      {q.type === 'text' ? (
-                        <Input placeholder="Your answer..." disabled />
-                      ) : null}
-                      {q.type === 'rating' ? (
-                        <div>⭐ ⭐ ⭐ ⭐ ⭐</div>
-                      ) : null}
-                    </div>
-                  ))}
-                </div>
-              )}
-
-            {selectedTemplate.type === 'StarRating' && (
-              <div style={{ fontSize: '20px' }}>⭐ ⭐ ⭐ ⭐ ⭐</div>
-            )}
-
-            {selectedTemplate.type === 'SmileRating' && (
-              <div style={{ fontSize: '24px' }}>😞 😐 😀</div>
+            <p><strong>Type:</strong> {selectedTemplate.type}</p>
+            {selectedTemplate.type === 'Questionnaire' && (
+              <div>
+                {selectedTemplate.config?.questions?.map((q, i) => (
+                  <div key={i}>
+                    <p><strong>Q{i + 1}:</strong> {q.question}</p>
+                    {q.type === 'text' ? (
+                      <Input placeholder="Answer..." disabled />
+                    ) : (
+                      <p>⭐ Rating Input (disabled)</p>
+                    )}
+                  </div>
+                ))}
+              </div>
             )}
           </div>
         )}
