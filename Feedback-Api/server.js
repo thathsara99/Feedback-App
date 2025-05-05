@@ -15,7 +15,7 @@ app.use(cors({
 }));
 
 const SECRET_KEY = 'mogu_jwt_main_secret';
-
+const dirname = path.resolve(__dirname, "..");
 app.use(bodyParser.json());
 
 const dataDir = path.join(__dirname, 'data');
