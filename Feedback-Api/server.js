@@ -8,7 +8,10 @@ const nodemailer = require('nodemailer');
 const cors = require("cors");
 const app = express();
 const dayjs = require('dayjs');
-const port = 5000;
+const dotenv = require("dotenv");
+
+dotenv.config();
+const PORT = process.env.PORT || 5000;
 
 app.use(cors({
     origin: '*'
@@ -525,4 +528,6 @@ app.get('/api/dashboardCounts', (req, res) => {
   res.json(dashboardCounts);
 });
 
-app.listen(port, () => console.log(`Server running on:${port}`));
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});
