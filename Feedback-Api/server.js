@@ -21,11 +21,13 @@ const dataDir = path.join(__dirname, 'data');
 const usersFile = path.join(dataDir, 'users.json');
 const companiesFile = path.join(dataDir, 'companies.json');
 const templatesFile = path.join(dataDir, 'templates.json');
+const reviewsFile = path.join(__dirname, 'reviews.json');
 
 if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir);
 if (!fs.existsSync(usersFile)) fs.writeFileSync(usersFile, '[]');
 if (!fs.existsSync(companiesFile)) fs.writeFileSync(companiesFile, '[]');
 if (!fs.existsSync(templatesFile)) fs.writeFileSync(templatesFile, '[]');
+if (!fs.existsSync(reviewsFile)) fs.writeFileSync(reviewsFile, '[]');
 
 const readJSON = (file) => JSON.parse(fs.readFileSync(file, 'utf-8') || '[]');
 const writeJSON = (file, data) => fs.writeFileSync(file, JSON.stringify(data, null, 2));
@@ -373,25 +375,75 @@ app.get('/api/templates', authMiddleware, (req, res) => {
 
 // Save template
 app.post('/api/templates', authMiddleware, (req, res) => {
+  const { templateName, type, requireComment, requireUsername, config, companyId } = req.body;
+  console.log(req.body)
   const templates = readJSON(templatesFile);
-  const newTemplate = req.body;
-  const existingIndex = templates.findIndex(t => t.key === newTemplate.key && t.companyId === req.user.companyId);
 
-  newTemplate.companyId = req.user.companyId;
+  const newTemplate = {
+    id: Date.now(),
+    templateName,
+    type,
+    requireComment,
+    requireUsername,
+    config: type === 'Questionnaire' ? config : {},
+    companyId
+  };
 
-  if (existingIndex !== -1) templates[existingIndex] = newTemplate;
-  else templates.push(newTemplate);
-
+  templates.push(newTemplate);
   writeJSON(templatesFile, templates);
-  res.json({ message: 'Template saved' });
+  res.status(201).json(newTemplate);
+});
+
+//Get Templates By Id
+app.get('/api/templatesById', authMiddleware, (req, res) => {
+  const templates = readJSON(templatesFile);
+  const template = templates.find((t) => t.id === req.params.id);
+  if (!template) return res.status(404).json({ message: 'Template not found' });
+  res.json(template);
+});
+
+//Get Templates By Company
+app.get('/api/templatesByCompany', authMiddleware, (req, res) => {
+  const templates = readJSON(templatesFile);
+  const companyId = Number(req.query.id);
+
+  const matchedTemplates = templates.filter((t) => t.companyId === companyId);
+  
+  if (!matchedTemplates.length) {
+    return res.status(404).json({ message: 'Template not found' });
+  }
+
+  res.json(matchedTemplates);
+});
+
+// Save template
+app.put('/api/templates', authMiddleware, (req, res) => {
+  const templates = readJSON(templatesFile);
+  const index = templates.findIndex((t) => t.id === req.body.id);
+  if (index === -1) return res.status(404).json({ message: 'Template not found' });
+
+  const updatedTemplate = {
+    ...templates[index],
+    ...req.body,
+    config: req.body.type === 'Questionnaire' ? req.body.config : {},
+  };
+
+  templates[index] = updatedTemplate;
+  writeJSON(templatesFile, templates);
+  res.json(updatedTemplate);
 });
 
 // Delete template
 app.delete('/api/templates/:key', authMiddleware, (req, res) => {
   let templates = readJSON(templatesFile);
-  templates = templates.filter(t => !(t.key === req.params.key && t.companyId === req.user.companyId));
+  const templateId = Number(req.params.key);
+  console.log(templateId)
+  const exists = templates.some((t) => t.id === templateId);
+  if (!exists) return res.status(404).json({ message: 'Template not found' });
+
+  templates = templates.filter((t) => t.id !== templateId);
   writeJSON(templatesFile, templates);
-  res.json({ message: 'Deleted' });
+  res.json({ message: 'Template deleted successfully' });
 });
 
 app.listen(port, () => console.log(`Server running on:${port}`));
