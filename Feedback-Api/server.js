@@ -7,6 +7,7 @@ const bodyParser = require('body-parser');
 const nodemailer = require('nodemailer');
 const cors = require("cors");
 const app = express();
+const dayjs = require('dayjs');
 const port = 5000;
 
 app.use(cors({
@@ -21,7 +22,7 @@ const dataDir = path.join(__dirname, 'data');
 const usersFile = path.join(dataDir, 'users.json');
 const companiesFile = path.join(dataDir, 'companies.json');
 const templatesFile = path.join(dataDir, 'templates.json');
-const reviewsFile = path.join(__dirname, 'reviews.json');
+const reviewsFile = path.join(dataDir, 'reviews.json');
 
 if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir);
 if (!fs.existsSync(usersFile)) fs.writeFileSync(usersFile, '[]');
@@ -444,6 +445,84 @@ app.delete('/api/templates/:key', authMiddleware, (req, res) => {
   templates = templates.filter((t) => t.id !== templateId);
   writeJSON(templatesFile, templates);
   res.json({ message: 'Template deleted successfully' });
+});
+
+app.post('/api/postReview', (req, res) => {
+  try {
+    const { type, data, comment, datetime, companyId } = req.body;
+
+    if (!type || !data) {
+      return res.status(400).json({ message: 'userId, type, and data are required' });
+    }
+
+    const reviews = readJSON(reviewsFile);
+    const userName = `vintageCustomer${Math.floor(1000 + Math.random() * 9000)}`;
+    const newReview = {
+      id: Date.now(),
+      userName,
+      type,
+      data,
+      comment,
+      datetime: datetime || new Date().toISOString(),
+      companyId
+    };
+
+    reviews.push(newReview);
+    writeJSON(reviewsFile, reviews);
+
+    res.status(201).json({ message: 'Review saved successfully', review: newReview });
+  } catch (err) {
+    console.error('Error saving review:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+app.get('/allReviewsForCompany', (req, res) => {
+  try {
+    const companyId = Number(req.query.companyId);
+    const reviews = readJSON(reviewsFile);
+    const filteredReviews = companyId
+      ? reviews.filter((review) => review.companyId === companyId)
+      : reviews;
+
+    res.json(filteredReviews);
+  } catch (err) {
+    console.error('Error fetching reviews:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+app.get('/api/dashboardCounts', (req, res) => {
+  const companyId = Number(req.query.companyId);
+
+  if (!companyId) {
+    return res.status(400).json({ error: 'Company ID is required' });
+  }
+
+  const companies = readJSON(companiesFile);
+  const users = readJSON(usersFile);
+  const templates = readJSON(templatesFile);
+  const reviews = readJSON(reviewsFile);
+
+  // Filter data by company ID
+  const companyUsers = users.filter(user => user.companyId === companyId);
+  const companyTemplates = templates.filter(template => template.companyId === companyId);
+  const companyReviews = reviews.filter(review => review.companyId === companyId);
+
+  // Get today's reviews
+  const todayReviews = companyReviews.filter(review =>
+    dayjs(review.datetime).isSame(dayjs(), 'day')
+  );
+
+  // Calculate counts
+  const dashboardCounts = {
+    totalUsers: companyUsers.length,
+    totalTemplates: companyTemplates.length,
+    totalReviews: companyReviews.length,
+    todayReviews: todayReviews.length,
+  };
+
+  res.json(dashboardCounts);
 });
 
 app.listen(port, () => console.log(`Server running on:${port}`));
